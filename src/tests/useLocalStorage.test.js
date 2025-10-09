@@ -38,4 +38,23 @@ describe('useLocalStorage', () => {
 
     expect(result.current[0]).toEqual({ count: 5 });
   });
+
+  test('should remove key and reset to default', () => {
+    const { result } = renderHook(() => useLocalStorage('test-key', { count: 0 }));
+
+    // set a value first
+    act(() => {
+      result.current[1]({ count: 10 });
+    });
+    expect(JSON.parse(localStorage.getItem('test-key'))).toEqual({ count: 10 });
+
+    // remove and expect default fallback
+    act(() => {
+      const remove = result.current[2];
+      remove();
+    });
+
+    expect(localStorage.getItem('test-key')).toBeNull();
+    expect(result.current[0]).toEqual({ count: 0 });
+  });
 });

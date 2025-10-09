@@ -4,7 +4,7 @@ import { useState } from 'react';
  * Custom hook for managing state that persists in localStorage
  * @param {string} key - The localStorage key
  * @param {*} initialValue - The initial value if no stored value exists
- * @returns {[*, Function]} - Returns [storedValue, setValue]
+ * @returns {[*, Function, Function]} - Returns [storedValue, setValue, remove]
  */
 export function useLocalStorage(key, initialValue) {
   // State to store our value
@@ -44,5 +44,18 @@ export function useLocalStorage(key, initialValue) {
     }
   };
 
-  return [storedValue, setValue];
+  // Remove key from localStorage and reset state to initialValue
+  const remove = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(key);
+      }
+    } catch (error) {
+      console.error(`Error removing localStorage key "${key}":`, error);
+    } finally {
+      setStoredValue(initialValue);
+    }
+  };
+
+  return [storedValue, setValue, remove];
 }
