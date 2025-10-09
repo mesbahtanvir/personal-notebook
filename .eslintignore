@@ -1,5 +1,0 @@
-node_modules/
-build/
-coverage/
-.eslintrc.cjs
-vite.config.*
