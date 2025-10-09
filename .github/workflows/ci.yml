@@ -51,3 +51,20 @@ jobs:
           fi
           echo "Triggering Vercel deploy hook..."
           curl --fail -X POST "$DEPLOY_HOOK_URL"
+
+  deploy-preview:
+    name: Deploy Preview to Vercel (Deploy Hook)
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Trigger Vercel Preview Deploy Hook
+        env:
+          PREVIEW_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_PREVIEW_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$PREVIEW_DEPLOY_HOOK_URL" ]; then
+            echo "Missing VERCEL_PREVIEW_DEPLOY_HOOK_URL secret" >&2
+            exit 1
+          fi
+          echo "Triggering Vercel preview deploy hook..."
+          curl --fail -X POST "$PREVIEW_DEPLOY_HOOK_URL"
