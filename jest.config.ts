@@ -9,8 +9,17 @@ const config: Config = {
   },
   testMatch: ['**/__tests__/**/*.test.(ts|tsx)'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.json' }],
+    '^.+\\.(ts|tsx)$': ['ts-jest', { 
+      tsconfig: {
+        jsx: 'react-jsx',
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+      },
+      useESM: true,
+    }],
   },
+  preset: 'ts-jest',
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
 }
 
 export default config

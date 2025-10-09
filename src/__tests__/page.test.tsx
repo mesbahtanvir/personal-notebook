@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import Page from '@/app/page'
 
 describe('Home Page', () => {
@@ -8,11 +8,17 @@ describe('Home Page', () => {
     expect(screen.getByText(/No tasks yet/i)).toBeInTheDocument()
   })
 
-  it('adds a task via the form', () => {
+  it('adds a task via the form', async () => {
     render(<Page />)
     const input = screen.getByLabelText('Task Title') as HTMLInputElement
-    fireEvent.change(input, { target: { value: 'Write tests' } })
-    fireEvent.click(screen.getByRole('button', { name: /add/i }))
-    expect(screen.getByText('Write tests')).toBeInTheDocument()
+    
+    await act(async () => {
+      fireEvent.change(input, { target: { value: 'Write tests' } })
+      fireEvent.click(screen.getByRole('button', { name: /add/i }))
+    })
+    
+    await waitFor(() => {
+      expect(screen.getByText('Write tests')).toBeInTheDocument()
+    })
   })
 })
