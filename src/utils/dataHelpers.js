@@ -107,3 +107,96 @@ export function getWeekData(data) {
     return itemDate >= weekAgo && itemDate <= today;
   });
 }
+
+/**
+ * Pure helpers for task/mood state updates (immutable)
+ */
+
+/**
+ * Add a task to backlog if valid and not duplicated by id
+ * @param {Array} tasks - existing tasks
+ * @param {Object} task - task to add { id, title, priority, ... }
+ * @returns {Array}
+ */
+export function addTaskToBacklog(tasks, task) {
+  if (!Array.isArray(tasks)) return [];
+  if (!task || typeof task !== 'object') return tasks;
+  const { id, title } = task;
+  if (!id || !title || String(title).trim() === '') return tasks;
+  const exists = tasks.some(t => t.id === id);
+  if (exists) return tasks;
+  return [...tasks, { ...task, status: 'backlog' }];
+}
+
+/**
+ * Remove a task from backlog by id (only if it's in backlog)
+ * @param {Array} tasks
+ * @param {string} taskId
+ * @returns {Array}
+ */
+export function removeTaskFromBacklog(tasks, taskId) {
+  if (!Array.isArray(tasks) || !taskId) return tasks || [];
+  return tasks.filter(t => !(t.id === taskId && (t.status === 'backlog' || !t.status)));
+}
+
+/**
+ * Move a task to today's list (sets status and date)
+ * @param {Array} tasks
+ * @param {string} taskId
+ * @param {string} [date]
+ * @returns {Array}
+ */
+export function addTaskToToday(tasks, taskId, date) {
+  if (!Array.isArray(tasks) || !taskId) return tasks || [];
+  const today = date || getCurrentDate();
+  let found = false;
+  const updated = tasks.map(t => {
+    if (t.id === taskId) {
+      found = true;
+      return { ...t, status: 'today', date: today };
+    }
+    return t;
+  });
+  return found ? updated : tasks;
+}
+
+/**
+ * Mark a task as completed
+ * @param {Array} tasks
+ * @param {string} taskId
+ * @returns {Array}
+ */
+export function markTaskDone(tasks, taskId) {
+  if (!Array.isArray(tasks) || !taskId) return tasks || [];
+  let found = false;
+  const updated = tasks.map(t => {
+    if (t.id === taskId) {
+      found = true;
+      return { ...t, status: 'completed' };
+    }
+    return t;
+  });
+  return found ? updated : tasks;
+}
+
+/**
+ * Add or update a mood log for a date
+ * @param {Array} moods - existing mood entries [{ date: 'YYYY-MM-DD', mood: 1-5, note?: string }]
+ * @param {Object} moodObj - new mood { date, mood, note }
+ * @returns {Array}
+ */
+export function logMood(moods, moodObj) {
+  if (!Array.isArray(moods)) return [];
+  if (!moodObj || typeof moodObj !== 'object') return moods;
+  const date = moodObj.date || getCurrentDate();
+  const mood = Number(moodObj.mood);
+  if (!date || Number.isNaN(mood) || mood < 1 || mood > 5) return moods;
+  const idx = moods.findIndex(m => m.date === date);
+  const entry = { date, mood, note: moodObj.note || '' };
+  if (idx >= 0) {
+    const next = [...moods];
+    next[idx] = entry;
+    return next;
+  }
+  return [...moods, entry];
+}
