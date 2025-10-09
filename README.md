@@ -16,7 +16,7 @@ This project is a privacy‑first personal productivity dashboard with tasks, fo
 - You can clear your data at any time from your browser settings.
 
 ## Live
-- https://personal-notebook-stagging.vercel.app/
+- https://personal-notebook-prod.vercel.app/
 
 ## Getting Started
 ```bash
