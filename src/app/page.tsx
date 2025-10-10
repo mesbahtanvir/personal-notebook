@@ -4,6 +4,9 @@ import { useTasks } from "@/store/useTasks";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 
+// Disable static generation for now
+export const dynamic = 'force-dynamic';
+
 type FormValues = { title: string };
 
 export default function Page() {
@@ -19,10 +22,10 @@ export default function Page() {
   };
 
   return (
-    <main className="space-y-6">
+    <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-3xl font-bold text-slate-900">Personal Notebook</h1>
-        <p className="text-slate-600">Privacy-first productivity dashboard</p>
+        <h1 className="text-3xl font-bold text-foreground">Personal Notebook</h1>
+        <p className="text-muted-foreground">Privacy-first productivity dashboard</p>
       </header>
 
       <section className="card p-4 space-y-4">
@@ -42,7 +45,7 @@ export default function Page() {
         <h2 className="text-xl font-semibold">Tasks</h2>
         <ul className="space-y-2">
           {tasks.length === 0 && (
-            <li className="text-slate-500">No tasks yet</li>
+            <li className="text-muted-foreground">No tasks yet</li>
           )}
           {tasks.map((t) => (
             <motion.li
@@ -57,13 +60,13 @@ export default function Page() {
                 checked={t.done}
                 onChange={() => toggle(t.id)}
               />
-              <label htmlFor={`task-${t.id}`} className={t.done ? "line-through text-slate-500" : ""}>
+              <label htmlFor={`task-${t.id}`} className={t.done ? "line-through text-muted-foreground" : ""}>
                 {t.title}
               </label>
             </motion.li>
           ))}
         </ul>
       </section>
-    </main>
+    </div>
   );
 }

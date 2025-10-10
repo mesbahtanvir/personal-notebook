@@ -1,20 +1,42 @@
+import type { Metadata, Viewport } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
-import type { Metadata } from 'next'
-import { ReactNode } from 'react'
+import { ThemeProvider } from '@/components/ThemeProvider'
+import { Navbar } from '@/components/Navbar'
+import { PageTransition } from '@/components/PageTransition'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Personal Notebook',
-  description: 'Privacy-first personal productivity dashboard',
+  title: 'Focus Notebook',
+  description: 'Privacy-first productivity dashboard for personal growth',
 }
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en">
-      <body>
-        <div className="container-page">
-          {children}
-        </div>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} antialiased`}>
+        <ThemeProvider>
+          <div className="min-h-screen bg-background text-foreground transition-colors duration-200">
+            <Navbar />
+            <main className="container mx-auto px-4 py-8">
+              <PageTransition>
+                {children}
+              </PageTransition>
+            </main>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   )
 }
+
