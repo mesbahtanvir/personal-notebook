@@ -23,6 +23,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setTheme(savedTheme)
     } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       setTheme('dark')
+    } else {
+      setTheme('light')
     }
   }, [])
 
@@ -30,22 +32,37 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (!mounted) return
     
     const root = window.document.documentElement
+    
+    // Remove all theme classes
     root.classList.remove('light', 'dark')
+    
+    // Add the current theme class
     root.classList.add(theme)
+    
+    // Add data-theme attribute for better theming support
+    root.setAttribute('data-theme', theme)
+    
+    // Save to localStorage
     localStorage.setItem('theme', theme)
   }, [theme, mounted])
 
   const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light')
+    setTheme(prevTheme => {
+      const newTheme = prevTheme === 'light' ? 'dark' : 'light'
+      return newTheme
+    })
   }
 
+  // Don't render anything until we've determined the theme
   if (!mounted) {
-    return <div className="min-h-screen bg-white">{children}</div>
+    return null
   }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
+      <div className={`${theme} min-h-screen bg-background text-foreground`}>
+        {children}
+      </div>
     </ThemeContext.Provider>
   )
 }
