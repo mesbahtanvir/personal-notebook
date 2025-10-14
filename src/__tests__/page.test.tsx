@@ -86,12 +86,12 @@ describe('Home Page', () => {
 
   it('renders empty state', () => {
     render(<Page />)
-    expect(screen.getByText(/No tasks yet/i)).toBeInTheDocument()
+    expect(screen.getByText(/No thoughts yet/i)).toBeInTheDocument()
   })
 
   it('adds a task via the form', async () => {
     render(<Page />)
-    const input = screen.getByLabelText('Task Title')
+    const input = screen.getByLabelText('Thought')
     
     await act(async () => {
       fireEvent.change(input, { target: { value: 'New Task' } })
@@ -107,7 +107,7 @@ describe('Home Page', () => {
 
   it('does not add empty task', async () => {
     render(<Page />)
-    const input = screen.getByLabelText('Task Title')
+    const input = screen.getByLabelText('Thought')
     
     await act(async () => {
       fireEvent.change(input, { target: { value: '   ' } })

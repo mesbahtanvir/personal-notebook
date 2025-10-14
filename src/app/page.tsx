@@ -3,6 +3,7 @@
 import { useTasks } from "@/store/useTasks";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
+import { useState, useMemo } from "react";
 
 // Disable static generation for now
 export const dynamic = 'force-dynamic';
@@ -14,6 +15,18 @@ export default function Page() {
   const tasks = useTasks((s) => s.tasks);
   const add = useTasks((s) => s.add);
   const toggle = useTasks((s) => s.toggle);
+  const [showAll, setShowAll] = useState(false);
+
+  const recentThoughts = useMemo(() => {
+    const sorted = [...tasks];
+    // If tasks have createdAt, sort by it desc; otherwise rely on insertion order
+    sorted.sort((a: any, b: any) => {
+      const ad = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bd = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bd - ad;
+    });
+    return sorted.slice(0, 3);
+  }, [tasks]);
 
   const onSubmit = (data: FormValues) => {
     if (!data.title?.trim()) return;
@@ -29,12 +42,12 @@ export default function Page() {
   return (
     <div className="space-y-6">
       <section className="card p-4 space-y-4">
-        <h2 className="text-xl font-semibold">Add Task</h2>
+        <h2 className="text-xl font-semibold">What's on your mind?</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="flex gap-2">
           <input
-            aria-label="Task Title"
+            aria-label="Thought"
             className="input flex-1"
-            placeholder="What will you do?"
+            placeholder="Capture a quick thought..."
             {...register("title")}
           />
           <button className="btn-primary" type="submit">Add</button>
@@ -42,12 +55,22 @@ export default function Page() {
       </section>
 
       <section className="card p-4 space-y-3">
-        <h2 className="text-xl font-semibold">Tasks</h2>
-        <ul className="space-y-2">
-          {tasks.length === 0 && (
-            <li className="text-muted-foreground">No tasks yet</li>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Recent Thoughts</h2>
+          {tasks.length > 3 && (
+            <button
+              className="text-sm underline text-muted-foreground hover:text-foreground"
+              onClick={() => setShowAll((v) => !v)}
+            >
+              {showAll ? 'Show less' : 'Show all'}
+            </button>
           )}
-          {tasks.map((t) => (
+        </div>
+        <ul className="space-y-2">
+          {(showAll ? tasks : recentThoughts).length === 0 && (
+            <li className="text-muted-foreground">No thoughts yet</li>
+          )}
+          {(showAll ? tasks : recentThoughts).map((t) => (
             <motion.li
               key={t.id}
               initial={{ opacity: 0, y: 4 }}
