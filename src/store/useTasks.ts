@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { db, toTask, toTaskRow } from '@/db'
 
 export type TaskStatus = 'active' | 'completed' | 'backlog'
 export type TaskCategory = 'mastery' | 'pleasure'
@@ -16,50 +17,91 @@ export interface Task {
 
 type State = {
   tasks: Task[]
-  add: (task: Omit<Task, 'id' | 'done'>) => void
-  toggle: (id: string) => void
-  updateTask: (id: string, updates: Partial<Omit<Task, 'id'>>) => void
-  deleteTask: (id: string) => void
+  isLoading: boolean
+  loadTasks: () => Promise<void>
+  add: (task: Omit<Task, 'id' | 'done'>) => Promise<void>
+  toggle: (id: string) => Promise<void>
+  updateTask: (id: string, updates: Partial<Omit<Task, 'id'>>) => Promise<void>
+  deleteTask: (id: string) => Promise<void>
   getTasksByStatus: (status: TaskStatus) => Task[]
   getTasksByCategory: (category: TaskCategory) => Task[]
 }
 
 export const useTasks = create<State>((set, get) => ({
   tasks: [],
+  isLoading: true,
   
-  add: (task) => set((state) => ({
-    tasks: [
-      ...state.tasks,
-      {
-        ...task,
-        id: Date.now().toString(),
-        done: false,
-      },
-    ],
-  })),
+  loadTasks: async () => {
+    try {
+      const tasks = await db.tasks.toArray()
+      set({ tasks: tasks.map(toTask), isLoading: false })
+    } catch (error) {
+      console.error('Failed to load tasks:', error)
+      set({ isLoading: false })
+    }
+  },
   
-  toggle: (id) => set((state) => ({
-    tasks: state.tasks.map((task) =>
-      task.id === id
-        ? {
-            ...task,
-            done: !task.done,
-            status: !task.done ? 'completed' : 'active',
-            completedAt: !task.done ? new Date().toISOString() : undefined,
-          }
-        : task
-    ),
-  })),
+  add: async (task) => {
+    const newTask = {
+      ...task,
+      id: Date.now().toString(),
+      done: false,
+    }
+    
+    try {
+      await db.tasks.add(toTaskRow(newTask))
+      set((state) => ({
+        tasks: [...state.tasks, newTask]
+      }))
+    } catch (error) {
+      console.error('Failed to add task:', error)
+    }
+  },
   
-  updateTask: (id, updates) => set((state) => ({
-    tasks: state.tasks.map((task) =>
-      task.id === id ? { ...task, ...updates } : task
-    ),
-  })),
+  toggle: async (id) => {
+    const task = get().tasks.find(t => t.id === id)
+    if (!task) return
+    
+    const updatedTask = {
+      ...task,
+      done: !task.done,
+      status: !task.done ? 'completed' : 'active' as TaskStatus,
+      completedAt: !task.done ? new Date().toISOString() : undefined
+    }
+    
+    try {
+      await db.tasks.update(id, toTaskRow(updatedTask))
+      set((state) => ({
+        tasks: state.tasks.map(t => t.id === id ? updatedTask : t)
+      }))
+    } catch (error) {
+      console.error('Failed to toggle task:', error)
+    }
+  },
   
-  deleteTask: (id) => set((state) => ({
-    tasks: state.tasks.filter((task) => task.id !== id),
-  })),
+  updateTask: async (id, updates) => {
+    try {
+      await db.tasks.update(id, updates)
+      set((state) => ({
+        tasks: state.tasks.map((task) =>
+          task.id === id ? { ...task, ...updates } : task
+        ),
+      }))
+    } catch (error) {
+      console.error('Failed to update task:', error)
+    }
+  },
+  
+  deleteTask: async (id) => {
+    try {
+      await db.tasks.delete(id)
+      set((state) => ({
+        tasks: state.tasks.filter((task) => task.id !== id),
+      }))
+    } catch (error) {
+      console.error('Failed to delete task:', error)
+    }
+  },
   
   getTasksByStatus: (status) => {
     return get().tasks.filter((task) => task.status === status)
@@ -69,3 +111,8 @@ export const useTasks = create<State>((set, get) => ({
     return get().tasks.filter((task) => task.category === category)
   },
 }))
+
+// Load tasks when the store is first used
+if (typeof window !== 'undefined') {
+  useTasks.getState().loadTasks()
+}
