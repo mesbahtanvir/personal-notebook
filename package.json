@@ -11,13 +11,19 @@
     "test:ci": "jest --ci --coverage"
   },
   "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "dexie": "4.0.9",
     "framer-motion": "11.0.0",
     "lucide-react": "^0.545.0",
     "next": "14.2.14",
+    "next-pwa": "^5.6.0",
+    "next-themes": "^0.4.6",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-hook-form": "7.53.0",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss-animate": "^1.0.7",
     "zustand": "4.5.4"
   },
   "devDependencies": {

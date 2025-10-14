@@ -1,21 +1,20 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { ThemeProvider } from 'next-themes'
-import Layout from '@/components/Layout'
+import { ThemeProvider } from '@/components/ThemeProvider'
+import { Navbar } from '@/components/Navbar'
+import { PageTransition } from '@/components/PageTransition'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Focus Notebook',
   description: 'Privacy-first productivity dashboard for personal growth',
-  manifest: '/manifest.json',
 }
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#1f2937',
 }
 
 export default function RootLayout({
@@ -26,18 +25,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          disableTransitionOnChange
-        >
-          <div className="dark">
-            <Layout>
-              {children}
-            </Layout>
+        <ThemeProvider>
+          <div className="transition-colors duration-200">
+            <Navbar />
+            <main className="container mx-auto px-4 py-8">
+              <PageTransition>
+                {children}
+              </PageTransition>
+            </main>
           </div>
         </ThemeProvider>
       </body>
     </html>
   )
 }
+
