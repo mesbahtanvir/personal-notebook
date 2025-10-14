@@ -23,9 +23,7 @@ export function TaskInput() {
 
     // Add task with metadata
     addTask({
-      id: Date.now().toString(),
       title: taskName.trim(),
-      done: false,
       category,
       createdAt: new Date().toISOString(),
       dueDate: destination === 'today' ? new Date().toISOString().split('T')[0] : undefined,

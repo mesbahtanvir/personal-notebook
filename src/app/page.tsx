@@ -17,7 +17,12 @@ export default function Page() {
 
   const onSubmit = (data: FormValues) => {
     if (!data.title?.trim()) return;
-    add(data.title.trim());
+    add({
+      title: data.title.trim(),
+      category: 'mastery', // Default category
+      status: 'active',
+      createdAt: new Date().toISOString()
+    });
     reset();
   };
 
