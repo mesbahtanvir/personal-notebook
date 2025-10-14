@@ -9,15 +9,19 @@ jest.mock('@/store/useTasks')
 const mockUseTasks = useTasksModule.useTasks as jest.MockedFunction<typeof useTasksModule.useTasks>
 
 describe('Home Page', () => {
-  const mockTasks: { id: string; title: string; done: boolean }[] = []
+  const mockTasks: { id: string; title: string; done: boolean; category: string; status: string; createdAt: string }[] = []
   const mockAdd = jest.fn()
   const mockToggle = jest.fn()
 
-  // Mock the Zustand store
+  // Mock the Zustand store with all required methods
   const mockStore = {
     tasks: mockTasks,
     add: mockAdd,
     toggle: mockToggle,
+    updateTask: jest.fn(),
+    deleteTask: jest.fn(),
+    getTasksByStatus: (status: string) => mockTasks.filter(task => task.status === status),
+    getTasksByCategory: (category: string) => mockTasks.filter(task => task.category === category),
   }
 
   beforeEach(() => {
@@ -48,7 +52,12 @@ describe('Home Page', () => {
       fireEvent.click(screen.getByRole('button', { name: /add/i }))
     })
     
-    expect(mockAdd).toHaveBeenCalledWith('Write tests')
+    expect(mockAdd).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Write tests',
+      category: 'mastery',
+      status: 'active',
+      createdAt: expect.any(String)
+    }))
   })
 
   it('does not add empty task', async () => {
@@ -66,8 +75,23 @@ describe('Home Page', () => {
   it('shows tasks when they exist', async () => {
     // Update the mock store with test tasks
     const testTasks = [
-      { id: '1', title: 'Test Task 1', done: false },
-      { id: '2', title: 'Test Task 2', done: true },
+      { 
+        id: '1', 
+        title: 'Test Task 1', 
+        done: false, 
+        category: 'mastery', 
+        status: 'active', 
+        createdAt: new Date().toISOString() 
+      },
+      { 
+        id: '2', 
+        title: 'Test Task 2', 
+        done: true, 
+        category: 'mastery', 
+        status: 'completed', 
+        completedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString() 
+      },
     ]
     
     mockStore.tasks = testTasks
