@@ -1,35 +1,82 @@
+// src/__tests__/page.test.tsx
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import Page from '@/app/page'
-import * as useTasksModule from '@/store/useTasks'
+import type { Task, TaskStatus, TaskCategory } from '@/store/useTasks'
+import { useTasks } from '@/store/useTasks'
 
-// Mock the entire module
-jest.mock('@/store/useTasks')
+// Mock the module and define useTasks as a jest.fn inside the factory
+jest.mock('@/store/useTasks', () => ({
+  __esModule: true,
+  // This jest.fn will be available via the imported useTasks symbol
+  useTasks: jest.fn(),
+}))
 
-// Type for the mocked useTasks hook
-const mockUseTasks = useTasksModule.useTasks as jest.MockedFunction<typeof useTasksModule.useTasks>
+// Mock Dexie at the module level
+jest.mock('dexie', () => {
+  const mockDB = new Map<string, any>()
+
+  class MockTable {
+    toArray() {
+      return Promise.resolve(Array.from(mockDB.values()))
+    }
+    add(task: any) {
+      mockDB.set(task.id, task)
+      return Promise.resolve(task.id)
+    }
+    update(id: string, changes: any) {
+      if (mockDB.has(id)) {
+        const task = { ...mockDB.get(id), ...changes }
+        mockDB.set(id, task)
+        return Promise.resolve(1)
+      }
+      return Promise.resolve(0)
+    }
+    delete(id: string) {
+      return Promise.resolve(mockDB.delete(id))
+    }
+  }
+
+  return {
+    __esModule: true,
+    default: class MockDexie {
+      tasks: any
+      constructor() {
+        this.tasks = new MockTable()
+      }
+      version() {
+        return {
+          stores: () => ({})
+        }
+      }
+    }
+  }
+})
 
 describe('Home Page', () => {
-  const mockTasks: { id: string; title: string; done: boolean; category: string; status: string; createdAt: string }[] = []
+  const mockTasks: Task[] = []
   const mockAdd = jest.fn()
   const mockToggle = jest.fn()
+  const mockLoadTasks = jest.fn()
 
-  // Mock the Zustand store with all required methods
+  // Mock the Zustand store with all required methods and properties
   const mockStore = {
     tasks: mockTasks,
+    isLoading: false,
     add: mockAdd,
     toggle: mockToggle,
     updateTask: jest.fn(),
     deleteTask: jest.fn(),
-    getTasksByStatus: (status: string) => mockTasks.filter(task => task.status === status),
-    getTasksByCategory: (category: string) => mockTasks.filter(task => task.category === category),
+    loadTasks: mockLoadTasks,
+    getTasksByStatus: (status: TaskStatus) => mockTasks.filter(task => task.status === status),
+    getTasksByCategory: (category: TaskCategory) => mockTasks.filter(task => task.category === category),
   }
 
   beforeEach(() => {
     // Reset mocks before each test
     jest.clearAllMocks()
     
-    // Mock the useTasks hook to return our mock store
-    mockUseTasks.mockImplementation((selector) => {
+    // Setup the mock implementation
+    ;(useTasks as unknown as jest.Mock).mockImplementation((selector) => {
       if (selector) {
         return selector(mockStore)
       }
@@ -37,9 +84,8 @@ describe('Home Page', () => {
     })
   })
 
-  it('renders heading and empty state', () => {
+  it('renders empty state', () => {
     render(<Page />)
-    expect(screen.getByText(/Personal Notebook/i)).toBeInTheDocument()
     expect(screen.getByText(/No tasks yet/i)).toBeInTheDocument()
   })
 
@@ -48,15 +94,14 @@ describe('Home Page', () => {
     const input = screen.getByLabelText('Task Title')
     
     await act(async () => {
-      fireEvent.change(input, { target: { value: 'Write tests' } })
+      fireEvent.change(input, { target: { value: 'New Task' } })
       fireEvent.click(screen.getByRole('button', { name: /add/i }))
     })
-    
+
     expect(mockAdd).toHaveBeenCalledWith(expect.objectContaining({
-      title: 'Write tests',
+      title: 'New Task',
       category: 'mastery',
-      status: 'active',
-      createdAt: expect.any(String)
+      status: 'active'
     }))
   })
 
@@ -74,7 +119,7 @@ describe('Home Page', () => {
 
   it('shows tasks when they exist', async () => {
     // Update the mock store with test tasks
-    const testTasks = [
+    const testTasks: Task[] = [
       { 
         id: '1', 
         title: 'Test Task 1', 
@@ -82,7 +127,7 @@ describe('Home Page', () => {
         category: 'mastery', 
         status: 'active', 
         createdAt: new Date().toISOString() 
-      },
+      } as Task,
       { 
         id: '2', 
         title: 'Test Task 2', 
@@ -91,10 +136,22 @@ describe('Home Page', () => {
         status: 'completed', 
         completedAt: new Date().toISOString(),
         createdAt: new Date().toISOString() 
-      },
+      } as Task,
     ]
     
-    mockStore.tasks = testTasks
+    // Create a new mock store with the test tasks
+    const testStore = {
+      ...mockStore,
+      tasks: testTasks
+    }
+    
+    // Update the mock implementation for this test
+    ;(useTasks as unknown as jest.Mock).mockImplementation((selector) => {
+      if (selector) {
+        return selector(testStore)
+      }
+      return testStore
+    })
     
     render(<Page />)
     

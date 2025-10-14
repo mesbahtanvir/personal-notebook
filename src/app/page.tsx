@@ -28,11 +28,6 @@ export default function Page() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-bold text-foreground">Personal Notebook</h1>
-        <p className="text-muted-foreground">Privacy-first productivity dashboard</p>
-      </header>
-
       <section className="card p-4 space-y-4">
         <h2 className="text-xl font-semibold">Add Task</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="flex gap-2">

@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { useTheme } from 'next-themes'
 
 type SettingsFormValues = {
   allowBackgroundProcessing: boolean;
@@ -20,6 +21,7 @@ type SettingsFormValues = {
 export default function SettingsPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
+  const { setTheme } = useTheme();
   const { register, handleSubmit, setValue, watch } = useForm<SettingsFormValues>({
     defaultValues: {
       allowBackgroundProcessing: false,
@@ -39,6 +41,9 @@ export default function SettingsPage() {
         Object.entries(parsedSettings).forEach(([key, value]) => {
           setValue(key as keyof SettingsFormValues, value as any);
         });
+        if (parsedSettings.theme) {
+          setTheme(parsedSettings.theme);
+        }
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -53,18 +58,7 @@ export default function SettingsPage() {
       localStorage.setItem('appSettings', JSON.stringify(data));
       
       // Apply settings
-      if (data.theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else if (data.theme === 'light') {
-        document.documentElement.classList.remove('dark');
-      } else {
-        // System preference
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      }
+      setTheme(data.theme);
 
       toast({
         title: 'Settings saved',
@@ -84,6 +78,20 @@ export default function SettingsPage() {
   const notificationEnabled = watch('notificationEnabled');
   const autoSave = watch('autoSave');
   const theme = watch('theme');
+
+  useEffect(() => {
+    const subscription = watch((value) => {
+      try {
+        localStorage.setItem('appSettings', JSON.stringify(value as SettingsFormValues));
+        if (value && typeof value === 'object' && 'theme' in (value as any)) {
+          setTheme((value as SettingsFormValues).theme);
+        }
+      } catch (e) {
+        console.error('Failed to auto-save settings:', e);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64">Loading settings...</div>;

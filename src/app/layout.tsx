@@ -31,11 +31,9 @@ export default function RootLayout({
           defaultTheme="dark"
           disableTransitionOnChange
         >
-          <div className="dark">
-            <Layout>
-              {children}
-            </Layout>
-          </div>
+          <Layout>
+            {children}
+          </Layout>
         </ThemeProvider>
       </body>
     </html>
