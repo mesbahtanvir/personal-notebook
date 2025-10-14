@@ -42,7 +42,7 @@ export default function Page() {
   return (
     <div className="space-y-6">
       <section className="card p-4 space-y-4">
-        <h2 className="text-xl font-semibold">What's on your mind?</h2>
+        <h2 className="text-xl font-semibold">What&apos;s on your mind?</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="flex gap-2">
           <input
             aria-label="Thought"

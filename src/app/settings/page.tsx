@@ -50,7 +50,7 @@ export default function SettingsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [setValue]);
+  }, [setValue, setTheme]);
 
   const onSubmit = (data: SettingsFormValues) => {
     try {
@@ -91,7 +91,7 @@ export default function SettingsPage() {
       }
     });
     return () => subscription.unsubscribe();
-  }, [watch]);
+  }, [watch, setTheme]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-64">Loading settings...</div>;
