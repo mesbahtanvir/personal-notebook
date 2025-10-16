@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { useTheme } from 'next-themes'
+import { db, type TaskRow, type MoodRow } from '@/db'
 
 type SettingsFormValues = {
   allowBackgroundProcessing: boolean;
@@ -32,6 +33,9 @@ export default function SettingsPage() {
     },
   });
   const [syncing, setSyncing] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Load saved settings from localStorage on component mount
   useEffect(() => {
@@ -72,6 +76,53 @@ export default function SettingsPage() {
         description: 'Failed to save settings. Please try again.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const doExport = async () => {
+    try {
+      const tasks = await db.tasks.toArray();
+      const moods = (db as any).moods ? await (db as any).moods.toArray() : [];
+      const payload = { version: 1, exportedAt: new Date().toISOString(), tasks, moods };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `focus-notebook-export-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: 'Exported', description: 'Your data has been exported as JSON.' });
+    } catch (e) {
+      toast({ title: 'Export failed', description: 'Could not export data.', variant: 'destructive' });
+    } finally {
+      setExportOpen(false);
+    }
+  };
+
+  const startImport = () => {
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChosen: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const tasks: TaskRow[] = Array.isArray(data?.tasks) ? data.tasks : [];
+      const moods: MoodRow[] = Array.isArray(data?.moods) ? data.moods : [];
+      await db.tasks.clear();
+      if ((db as any).moods) await (db as any).moods.clear();
+      if (tasks.length) await db.tasks.bulkPut(tasks as any);
+      if ((db as any).moods && moods.length) await (db as any).moods.bulkPut(moods as any);
+      toast({ title: 'Import complete', description: 'Your data has been restored.' });
+    } catch (e) {
+      toast({ title: 'Import failed', description: 'Invalid or unreadable JSON.', variant: 'destructive' });
+    } finally {
+      setImportOpen(false);
     }
   };
 
@@ -204,18 +255,6 @@ export default function SettingsPage() {
                 onCheckedChange={(checked) => setValue('autoSave', checked)}
               />
             </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Focus Notebook Cloud Sync</Label>
-                <p className="text-sm text-muted-foreground">
-                  Sync your notes to the cloud on demand
-                </p>
-              </div>
-              <Button onClick={handleCloudSync} disabled={syncing}>
-                {syncing ? 'Syncing…' : 'Sync Now'}
-              </Button>
-            </div>
           </CardContent>
           
           <CardFooter className="border-t px-6 py-4">
@@ -223,6 +262,38 @@ export default function SettingsPage() {
           </CardFooter>
         </form>
       </Card>
+
+      {exportOpen && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setExportOpen(false)} />
+          <div className="relative z-10 flex min-h-full items-center justify-center p-4">
+            <div className="card p-6 border w-full max-w-md">
+              <div className="text-lg font-medium">Export Data</div>
+              <div className="mt-2 text-sm text-muted-foreground">Export tasks (including backlog) and moods as a JSON file?</div>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button variant="secondary" type="button" onClick={() => setExportOpen(false)}>Cancel</Button>
+                <Button type="button" onClick={doExport}>Export</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {importOpen && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setImportOpen(false)} />
+          <div className="relative z-10 flex min-h-full items-center justify-center p-4">
+            <div className="card p-6 border w-full max-w-md">
+              <div className="text-lg font-medium">Import Data</div>
+              <div className="mt-2 text-sm text-muted-foreground">This will replace your current tasks and moods with the JSON file content. Continue?</div>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button variant="secondary" type="button" onClick={() => setImportOpen(false)}>Cancel</Button>
+                <Button type="button" onClick={startImport}>Choose File</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

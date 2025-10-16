@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useTasks, Task } from "@/store/useTasks";
 
 function isSameDay(a: Date, b: Date) {
@@ -17,6 +17,7 @@ function isTodayISO(iso?: string) {
 export default function TaskList() {
   const tasks = useTasks((s) => s.tasks);
   const toggle = useTasks((s) => s.toggle);
+  const prefersReducedMotion = useReducedMotion();
 
   const todays = useMemo(() => {
     const list = tasks.filter((t) => isTodayISO(t.dueDate) || isTodayISO(t.createdAt));
@@ -41,10 +42,11 @@ export default function TaskList() {
               <motion.div
                 key={t.id}
                 layout
-                initial={{ opacity: 0, scale: 0.98, y: 6 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.995, y: 4 }}
+                animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+                exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.995, y: 2 }}
+                whileHover={prefersReducedMotion ? undefined : { y: -2 }}
+                transition={{ type: "spring", stiffness: 180, damping: 22 }}
                 className={`card p-4 border ${t.done ? "opacity-70" : ""}`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -53,7 +55,8 @@ export default function TaskList() {
                       type="checkbox"
                       checked={t.done}
                       onChange={() => toggle(t.id)}
-                      whileTap={{ scale: 0.9 }}
+                      whileTap={{ scale: 0.94 }}
+                      aria-label={`Mark ${t.title} as ${t.done ? 'incomplete' : 'complete'}`}
                     />
                     <div>
                       <div className={`font-medium ${t.done ? "line-through text-muted-foreground" : ""}`}>
