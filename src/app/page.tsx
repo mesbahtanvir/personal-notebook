@@ -1,9 +1,11 @@
 "use client";
 
 import { useTasks } from "@/store/useTasks";
+import { useThoughts } from "@/store/useThoughts";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import { useState, useMemo } from "react";
+import TaskList from "@/components/TaskList";
 
 // Disable static generation for now
 export const dynamic = 'force-dynamic';
@@ -12,13 +14,17 @@ type FormValues = { title: string };
 
 export default function Page() {
   const { register, handleSubmit, reset } = useForm<FormValues>();
-  const tasks = useTasks((s) => s.tasks);
-  const add = useTasks((s) => s.add);
-  const toggle = useTasks((s) => s.toggle);
+  // Thoughts store
+  const thoughts = useThoughts((s) => s.thoughts);
+  const addThought = useThoughts((s) => s.add);
+  const toggleThought = useThoughts((s) => s.toggle);
+  const deleteThought = useThoughts((s) => s.deleteThought);
+  // Tasks store (for New Task button only; TaskList handles its own reads)
+  const addTask = useTasks((s) => s.add);
   const [showAll, setShowAll] = useState(false);
 
   const recentThoughts = useMemo(() => {
-    const sorted = [...tasks];
+    const sorted = [...thoughts];
     // If tasks have createdAt, sort by it desc; otherwise rely on insertion order
     sorted.sort((a: any, b: any) => {
       const ad = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -26,17 +32,30 @@ export default function Page() {
       return bd - ad;
     });
     return sorted.slice(0, 3);
-  }, [tasks]);
+  }, [thoughts]);
 
   const onSubmit = (data: FormValues) => {
     if (!data.title?.trim()) return;
-    add({
+    addTask({
       title: data.title.trim(),
-      category: 'mastery', // Default category
+      category: 'mastery',
       status: 'active',
-      createdAt: new Date().toISOString()
-    });
+      createdAt: new Date().toISOString(),
+    } as any);
     reset();
+  };
+
+  const createNewTask = async () => {
+    const title = window.prompt('New task title?')?.trim();
+    if (!title) return;
+    const categoryInput = window.prompt("Category? (mastery/pleasure)")?.trim().toLowerCase();
+    const category = categoryInput === 'pleasure' ? 'pleasure' : 'mastery';
+    await addTask({
+      title,
+      category,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    } as any);
   };
 
   return (
@@ -56,8 +75,8 @@ export default function Page() {
 
       <section className="card p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Recent Thoughts</h2>
-          {tasks.length > 3 && (
+          <h2 className="text-xl font-semibold">Thoughts</h2>
+          {thoughts.length > 3 && (
             <button
               className="text-sm underline text-muted-foreground hover:text-foreground"
               onClick={() => setShowAll((v) => !v)}
@@ -67,10 +86,10 @@ export default function Page() {
           )}
         </div>
         <ul className="space-y-2">
-          {(showAll ? tasks : recentThoughts).length === 0 && (
+          {(showAll ? thoughts : recentThoughts).length === 0 && (
             <li className="text-muted-foreground">No thoughts yet</li>
           )}
-          {(showAll ? tasks : recentThoughts).map((t) => (
+          {(showAll ? thoughts : recentThoughts).map((t) => (
             <motion.li
               key={t.id}
               initial={{ opacity: 0, y: 4 }}
@@ -81,15 +100,31 @@ export default function Page() {
                 id={`task-${t.id}`}
                 type="checkbox"
                 checked={t.done}
-                onChange={() => toggle(t.id)}
+                onChange={() => toggleThought(t.id)}
               />
               <label htmlFor={`task-${t.id}`} className={t.done ? "line-through text-muted-foreground" : ""}>
                 {t.title}
               </label>
+              <button
+                className="ml-auto text-xs underline text-red-600 hover:text-red-700"
+                onClick={() => deleteThought(t.id)}
+                aria-label={`Delete ${t.title}`}
+              >
+                Delete
+              </button>
             </motion.li>
           ))}
         </ul>
       </section>
+
+      <section className="card p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Tasks</h2>
+          <button className="btn-primary" onClick={createNewTask}>New Task</button>
+        </div>
+        <TaskList />
+      </section>
+
     </div>
   );
 }

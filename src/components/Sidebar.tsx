@@ -1,14 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, LayoutDashboard, Settings, User } from 'lucide-react';
+import { Home, LayoutDashboard, Settings, User, Wrench } from 'lucide-react';
 
 export default function Sidebar() {
   const navItems = [
     { href: '/', icon: Home, label: 'Home' },
+    { href: '/tools', icon: Wrench, label: 'Tools' },
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/profile', icon: User, label: 'Profile' },
     { href: '/settings', icon: Settings, label: 'Settings' },
+    { href: '/profile', icon: User, label: 'Profile' },
   ];
 
   return (
