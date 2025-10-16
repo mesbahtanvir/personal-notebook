@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +14,11 @@ const TOOLS = [
     key: "cbt",
     title: "CBT",
     description: "Cognitive Behavioral Therapy worksheets and prompts.",
+  },
+  {
+    key: "moodtracker",
+    title: "Mood Tracker",
+    description: "Track your mood (1–10) with optional notes and history.",
   },
 ];
 
@@ -35,7 +41,9 @@ export default function ToolsPage() {
                       {tool.description}
                     </p>
                   </div>
-                  <Button size="sm">Open</Button>
+                  <Button size="sm" asChild>
+                    <Link href={`/tools/${tool.key}`}>Open</Link>
+                  </Button>
                 </div>
               </div>
             ))}

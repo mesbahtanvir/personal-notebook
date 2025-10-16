@@ -11,9 +11,18 @@ export type ThoughtRow = {
   createdAt: string
 }
 
+// Mood entries table row type
+export type MoodRow = {
+  id: string
+  value: number // 1-10
+  note?: string
+  createdAt: string
+}
+
 class AppDB extends Dexie {
   tasks!: Table<TaskRow, string>
   thoughts!: Table<ThoughtRow, string>
+  moods!: Table<MoodRow, string>
 
   constructor() {
     super('personal-notebook')
@@ -23,6 +32,11 @@ class AppDB extends Dexie {
     this.version(3).stores({
       tasks: '&id, title, done, category, status, createdAt, dueDate, completedAt',
       thoughts: '&id, title, done, createdAt',
+    })
+    this.version(4).stores({
+      tasks: '&id, title, done, category, status, createdAt, dueDate, completedAt',
+      thoughts: '&id, title, done, createdAt',
+      moods: '&id, value, createdAt',
     })
   }
 }
