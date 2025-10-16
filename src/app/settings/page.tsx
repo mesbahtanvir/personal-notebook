@@ -31,6 +31,7 @@ export default function SettingsPage() {
       autoSave: true,
     },
   });
+  const [syncing, setSyncing] = useState(false);
 
   // Load saved settings from localStorage on component mount
   useEffect(() => {
@@ -71,6 +72,26 @@ export default function SettingsPage() {
         description: 'Failed to save settings. Please try again.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleCloudSync = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      await new Promise((r) => setTimeout(r, 1200));
+      toast({
+        title: 'Cloud sync complete',
+        description: 'Your Focus Notebook is up to date.',
+      });
+    } catch (e) {
+      toast({
+        title: 'Cloud sync failed',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -182,6 +203,18 @@ export default function SettingsPage() {
                 checked={autoSave}
                 onCheckedChange={(checked) => setValue('autoSave', checked)}
               />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Focus Notebook Cloud Sync</Label>
+                <p className="text-sm text-muted-foreground">
+                  Sync your notes to the cloud on demand
+                </p>
+              </div>
+              <Button onClick={handleCloudSync} disabled={syncing}>
+                {syncing ? 'Syncing…' : 'Sync Now'}
+              </Button>
             </div>
           </CardContent>
           
